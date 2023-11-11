@@ -1,0 +1,932 @@
+#ifndef SEARCHTREE_H
+#define SEARCHTREE_H
+#include <vector>
+
+public:
+class Node
+{
+public:
+    Node(int key = 0, Node* left = nullptr, Node* right = nullptr)
+    {
+        m_key = key;
+        m_left = l;
+        m_right = r;
+    }
+    ~Node();
+    Node* left()
+    {
+        return m_left;
+    }
+    Node* right()
+    {
+        return m_right;
+    }
+    int key()
+    {
+        return m_key;
+    }
+private:
+    int m_key = 0;
+    Node* m_left = nullptr;
+    Node* m_right = nullptr;
+};
+
+
+class SearchTree
+{
+public:
+    class Node
+    {
+    public:
+        Node(int key = 0, Node* leftChild = nullptr, Node* rightChild = nullptr)
+        {
+            m_key = key;
+            m_leftChild = leftChild;
+            m_rightChild = rightChild;
+        }
+        ~Node() = default;
+        int key() const
+        {
+            return m_key;
+        }
+        void setKey(const int key)
+        {
+            m_key = key;
+        }
+        Node* leftChild()
+        {
+            return m_leftChild;
+        }
+        const Node* leftChild() const
+        {
+            return m_leftChild;
+        }
+        void setLeftChild(Node* newChild)
+        {
+            m_leftChild = newChild;
+        }
+        Node* rightChild()
+        {
+            return m_rightChild;
+        }
+        const Node* rightChild() const
+        {
+            return m_rightChild;
+        }
+        void setRightChild(Node* newChild)
+        {
+            m_rightChild = newChild;
+        }
+
+    private:
+        Node* m_leftChild = nullptr;
+        Node* m_rightChild = nullptr;
+        int m_key = 0;
+    };
+
+public:
+    SearchTree();
+    SearchTree(const int key);
+    SearchTree(const SearchTree& other);
+    SearchTree& operator= (const SearchTree&);
+    ~SearchTree();
+    Node* root() const;
+    bool insert(int key);
+    Node* searchNode(int key);
+    bool searchNodeCheck(int key);
+    Node* addNode(int key);
+    std::vector<Node *> getNodes();
+    Node* findParent(Node* root);
+    bool deleteNode(int key);
+    void clear();
+    int getHeight();
+    void printTree();
+
+
+
+
+
+protected:
+    bool searchNode(Node *root, int key);
+    bool insert(Node* root, int key);
+    bool deleteNode(Node* root, int key);
+
+    Node* addNode(Node* root, int key);
+    Node* searchNode(Node* root, int key);
+    bool searchNodeCheck(Node* root, int key);
+    Node* searchParent(Node* root, Node* node);
+    Node* maxNode(Node* root);
+    std::vector<Node*> getNodes(Node* root);
+    void copySubTree(Node* copiedTree, Node* currentTree, bool isRight) const;
+    void deleteAllNode(Node* root) const;
+    int getHeight(Node* root);
+    void printTree(Node* root);
+
+
+protected:
+    Node* m_root = nullptr;
+};
+
+#endif // SEARCHTREE_H
+
+
+
+
+
+
+
+
+
+
+
+
+#include "searchtree.h"
+#include <iostream>
+#include <vector>
+
+void SearchTree::clear()
+{
+    deleteAllNode(m_root);
+    m_root = nullptr;
+}
+
+void SearchTree::deleteAllNode(Node* root) const
+{
+    if (root == nullptr)
+        return;
+    deleteAllNode(root->leftChild());
+    deleteAllNode(root->rightChild());
+    delete root;
+}
+
+SearchTree::~SearchTree()
+{
+    deleteAllNode(m_root);
+    m_root = nullptr;
+}
+
+SearchTree::Node *SearchTree::root() const
+{
+    return m_root;
+}
+
+SearchTree::SearchTree()
+{
+    m_root = nullptr;
+}
+
+SearchTree::SearchTree(const int key)
+{
+    m_root = new Node(key);
+}
+
+SearchTree::SearchTree(const SearchTree& other)
+{
+    m_root = new Node(other.m_root->key());
+    copySubTree(other.m_root->leftChild(), m_root, 0); // 0 - leftSubTree
+    copySubTree(other.m_root->rightChild(), m_root, 1); // 1 - rightChild()
+}
+
+bool SearchTree::insert(Node *root, int key)
+{
+    Node* insertNode = new Node(key);
+    if(root == nullptr){
+        root = insertNode;
+        return true;
+    }
+    Node* tmp = root;
+    Node* correctNode = root;
+    while(tmp != nullptr){
+        if(tmp->key() < key){
+            correctNode = tmp;
+            tmp = tmp->rightChild();
+        }
+        else if (tmp->key() > key){
+            correctNode = tmp;
+            tmp = tmp->leftChild();
+        }
+        else{
+            std::cout << "Повтор значения" << key;
+            return false;
+        }
+    }
+    if(correctNode->key() < key){
+        correctNode->setRightChild(insertNode);
+    }
+    else{
+        correctNode->setLeftChild(insertNode);
+    }
+    return true;
+}
+
+bool SearchTree::insert(int key)
+{
+    return insert(m_root, key);
+}
+
+SearchTree::Node* SearchTree::addNode(Node* root, int key)
+{
+    if (!root) {
+        root = new Node(key);
+    }
+    else if (key < root->key()) {
+        root->setLeftChild(addNode(root->leftChild(), key));
+    }
+    else {
+        root->setRightChild(addNode(root->rightChild(), key));
+    }
+
+    return root;
+}
+
+SearchTree::Node* SearchTree::addNode(int key)
+{
+    if (m_root) {
+        return addNode(m_root, key);
+    }
+    else {
+        return m_root = new Node(key);
+    }
+}
+
+std::vector<SearchTree::Node *> SearchTree::getNodes()
+{
+    return getNodes(m_root);
+}
+
+SearchTree::Node *SearchTree::findParent(Node *root)
+{
+    {
+        if (root == nullptr || m_root == root)
+            return nullptr;
+
+        std::vector<Node*> currLevel;
+        currLevel.push_back(m_root);
+
+        while (currLevel.size())
+        {
+
+            std::vector<Node*> nextLevel;
+            nextLevel.reserve(currLevel.size() * 2);
+
+            for (Node* node : currLevel)
+            {
+                if (node->leftChild())
+                {
+                    if (node->leftChild() == root)
+                    {
+                        return node;
+                    }
+                    nextLevel.push_back(node->leftChild());
+
+                }
+
+                if (node->rightChild())
+                {
+                    if (node->rightChild() == root)
+                    {
+                        return node;
+                    }
+
+                    nextLevel.push_back(node->rightChild());
+
+                }
+            }
+            currLevel.swap(nextLevel);
+        }
+        return nullptr;
+    }
+}
+
+std::vector<SearchTree::Node*> SearchTree::getNodes(Node* root)
+{
+    if (root == nullptr)
+        return std::vector<Node*>();
+
+    std::vector<Node*> nodes;
+    nodes.push_back(root);
+
+    std::vector<Node*> currLevel;
+    currLevel.push_back(root);
+
+    while (currLevel.size())
+    {
+        std::vector<Node*> nextLevel;
+        nextLevel.reserve(currLevel.size() * 2);
+
+        for (Node* node : currLevel)
+        {
+            if (node->leftChild())
+            {
+                nextLevel.push_back(node->leftChild());
+                nodes.push_back(node->leftChild());
+            }
+
+            if (node->rightChild())
+            {
+                nextLevel.push_back(node->rightChild());
+                nodes.push_back(node->rightChild());
+            }
+        }
+        currLevel.swap(nextLevel);
+    }
+
+    return nodes;
+}
+
+bool SearchTree::searchNodeCheck(Node *root, int key)
+{
+    if(root == nullptr){
+        return false;
+    }
+    Node* tmp = root;
+    while(tmp != nullptr){
+        if(tmp->key() == key){
+            return true;
+        }
+        if(tmp->key() < key){
+            tmp = tmp->rightChild();
+        }
+        else{
+            tmp = tmp->leftChild();
+        }
+    }
+    return false;
+}
+
+bool SearchTree::searchNodeCheck(int key)
+{
+    return searchNode(m_root, key);
+}
+
+SearchTree::Node* SearchTree::searchNode(Node* root, int key)
+{
+    if (root == nullptr) {
+        return nullptr;
+    }
+    if (root->key() == key) {
+        return root;
+    }
+    if (key < root->key()) {
+        searchNode(root->leftChild(), key);
+    }
+    else {
+        searchNode(root->rightChild(), key);
+    }
+}
+
+SearchTree::Node* SearchTree::searchNode(int key)
+{
+    return searchNode(m_root, key);
+}
+
+SearchTree::Node* SearchTree::searchParent(Node* root, Node* node)
+{
+    if (root == node) {
+        return nullptr;
+    }
+    Node* current = root;
+    Node* nodeParent = nullptr;
+    while (current != nullptr)
+    {
+        if (node == current) {
+            break;
+        }
+        nodeParent = current;
+        if (root->key() > node->key()){
+            current = current->leftChild();
+        }
+        else {
+            current = current->rightChild();
+        }
+    }
+    return nodeParent;
+}
+
+bool SearchTree::deleteNode(Node* root, int key)
+{
+    Node* node = searchNode(root, key);
+    if (node == nullptr) {
+        return false;
+    }
+    Node* nodeParent = searchParent(root, node);
+
+
+    // У удаляемого узла - нет потомков
+    if (node->leftChild() == nullptr and node->rightChild() == nullptr) {
+
+        if (nodeParent)
+            if (nodeParent->leftChild() == node){
+                nodeParent->leftChild() = nullptr;
+            }
+            else{
+                nodeParent->rightChild() = nullptr;
+            }
+        else
+            m_root = nullptr;
+
+        delete node;
+        return true;
+    }
+    // У удаляемого узла - один потомок
+    else if (node->leftChild() != nullptr and node->rightChild() == nullptr) {
+
+        Node* replacementNode = node->leftChild();
+        if(nodeParent == nullptr){
+            m_root = m_root->leftChild();
+        }
+        else{
+            if (nodeParent->leftChild() == node) {
+                nodeParent->leftChild() = replacementNode;
+            }
+            else {
+                nodeParent->rightChild() = replacementNode;
+            }
+        }
+        delete node;
+        return true;
+    }
+    else if (node->rightChild() != nullptr and node->leftChild() == nullptr) {
+
+        Node* replacementNode = node->rightChild();
+        if(nodeParent == nullptr){
+            m_root = m_root->rightChild();
+        }
+        else{
+            if (nodeParent->leftChild() == node) {
+                nodeParent->leftChild() = replacementNode;
+            }
+            else {
+                nodeParent->rightChild() = replacementNode;
+            }
+        }
+        delete node;
+        return true;
+    }
+    // У удаляемого узла - 2 потомка
+    else if (node->rightChild() != nullptr and node->leftChild() != nullptr) {
+        Node* replacementNode = maxNode(node->leftChild()); // Если у заменяемого узла есть потомк
+        Node* replacementNodeParent = searchParent(node, replacementNode);
+        replacementNodeParent->setRightChild(replacementNode->leftChild());
+        if(nodeParent == nullptr){
+            m_root = replacementNode;
+        }
+        else{
+            if (nodeParent->leftChild() == node) {
+                nodeParent->leftChild() = replacementNode;
+                replacementNode->setLeftChild(node->leftChild());
+                replacementNode->setRightChild(node->rightChild());
+
+            }
+            else {
+                nodeParent->rightChild() = replacementNode;
+                replacementNode->setLeftChild(node->leftChild());
+                replacementNode->setRightChild(node->rightChild());
+            }
+        }
+
+    }
+    delete node;
+    return true;
+}
+
+bool SearchTree::deleteNode(int key)
+{
+    return deleteNode(m_root, key);
+}
+
+SearchTree::Node* SearchTree::maxNode(Node* root)
+{
+    Node* max = root;
+    if (root->rightChild()) {
+        return maxNode(root->rightChild());
+    }
+    return max;
+}
+
+void SearchTree::copySubTree(Node* copiedTree, Node* currentTree, bool isRight) const
+{
+    if (copiedTree == nullptr) {
+        return;
+    }
+    Node* tmp = new Node(copiedTree->key());
+    if (isRight == false) {
+        currentTree->setLeftChild(tmp);
+    }
+    else {
+        currentTree->setRightChild(tmp);
+    }
+
+    copySubTree(copiedTree->leftChild(), tmp, false);
+    copySubTree(copiedTree->rightChild(), tmp, true);
+}
+
+int SearchTree::getHeight() const
+{
+    return getHeight(m_root);
+}
+
+int SearchTree::getHeight(Node* root) const
+{
+    if (root == nullptr)
+        return 0;
+
+    if ((root->leftChild() == nullptr) && (root->rightChild() == nullptr))
+        return 1;
+
+    int leftHeight = 0, rightHeight = 0;
+
+    if (root->leftChild())
+        leftHeight = getHeight(root->leftChild());
+
+    if (root->rightChild())
+        rightHeight = getHeight(root->rightChild());
+
+    int height;
+
+    if (rightHeight > leftHeight)
+        height = rightHeight;
+    else
+        height = leftHeight;
+
+    return height + 1;
+}
+
+void SearchTree::printTree()
+{
+    return printTree(m_root);
+}
+
+void SearchTree::printTree(Node* root)
+{
+    if (root == nullptr)
+    {
+        std::cerr << "Tree is empty";
+        return;
+    }
+
+    int height = getHeight(root);
+
+    for (int level = 0; level < height; level++)
+    {
+        //std::cout << level << '\n';
+        std::vector<Node*> currentLevel;
+        currentLevel.push_back(m_root);
+
+        for (int i = 0; i < level; i++)
+        {
+            std::vector<Node*> nextLevel;
+            nextLevel.reserve(currentLevel.size() * 2);
+
+            for (Node* Node : currentLevel)
+            {
+                if (Node)
+                {
+                    nextLevel.push_back(Node->leftChild());
+                    nextLevel.push_back(Node->rightChild());
+                }
+                else
+                {
+                    nextLevel.push_back(nullptr);
+                    nextLevel.push_back(nullptr);
+                }
+            }
+
+            currentLevel.swap(nextLevel);
+        }
+
+        for (int i = 0, tabs = 6; i < currentLevel.size(); i++, tabs--)
+        {
+            if (currentLevel[i])
+                std::cout << currentLevel[i]->key << "  ";
+            else
+                std::cout << -1 << ' ';
+        }
+        std::cout << std::erootl;
+    }
+
+}
+
+
+Node* left()
+{
+    return m_left;
+}
+Node* right()
+{
+    return m_right;
+}
+int key()
+{
+    return m_key;
+}
+
+
+#include "SearchTree.h"
+#include <iostream>
+#include <vector>
+
+SearchTree::SearchTree()
+{
+
+}
+
+SearchTree::~SearchTree()
+{
+    clearTree();
+}
+
+SearchTree::Node* SearchTree::root() const
+{
+    return m_root;
+}
+
+void SearchTree::clearTree()
+{
+    clearTree(m_root);
+}
+
+void SearchTree::clearTree(Node* subTreeRoot)
+{
+    if (subTreeRoot == nullptr)
+        return;
+
+    if (subTreeRoot->left())
+        clearTree(subTreeRoot->left());
+    if (subTreeRoot->right())
+        clearTree(subTreeRoot->right());
+
+    if (subTreeRoot == m_root)
+        m_root = nullptr;
+
+    delete subTreeRoot;
+}
+
+bool SearchTree::isEmpty() const
+{
+    return m_root == nullptr;
+}
+
+int SearchTree::getHeight() const
+{
+    return getHeight(m_root);
+}
+
+int SearchTree::getHeight(Node* root) const
+{
+    if (root == nullptr)
+        return 0;
+
+    if ((root->left() == nullptr) && (root->right() == nullptr))
+        return 1;
+
+    int leftHeight = 0, rightHeight = 0;
+
+    if (root->left())
+        leftHeight = getHeight(root->left());
+
+    if (root->right())
+        rightHeight = getHeight(root->right());
+
+    int height;
+
+    if (rightHeight > leftHeight)
+        height = rightHeight;
+    else
+        height = leftHeight;
+
+    return height + 1;
+}
+
+SearchTree::Node* SearchTree::addNode(const int key)
+{
+    return addNode(m_root, key);
+}
+
+SearchTree::Node* SearchTree::addNode(Node* root, const int key)
+{
+    Node* tmp = new Node(key);
+    if (root == nullptr)
+        if (m_root == nullptr)
+        {
+            m_root = tmp;
+            return m_root;
+        }
+        else
+            return nullptr;
+
+    if (key < root->key())
+    {
+        if (root->left())
+            return addNode(root->left(), key);
+        else
+        {
+            root->left() = tmp;
+            return root->left();
+        }
+    }
+    else
+        if (root->right())
+            return addNode(root->right(), key);
+        else
+        {
+            root->right() = tmp;
+            return root->right();
+        }
+
+}
+
+SearchTree::Node* SearchTree::getMin() const
+{
+    return getMin(m_root);
+}
+
+SearchTree::Node* SearchTree::getMin(Node* root) const
+{
+    if (root == nullptr)
+        return nullptr;
+
+    if (root->left())
+        return getMin(root->left());
+    else
+        return root;
+
+}
+
+
+SearchTree::Node* SearchTree::getMax() const
+{
+    return getMax(m_root);
+}
+
+SearchTree::Node* SearchTree::getMax(Node* root) const
+{
+    if (root == nullptr)
+        return nullptr;
+
+    if (root->right())
+        return getMax(root->right());
+    else
+        return root;
+}
+
+
+SearchTree::Node* SearchTree::nlrSearch(const int key) const
+{
+    return nlrSearch(m_root, key);
+}
+
+
+SearchTree::Node* SearchTree::nlrSearch(Node* root, const int key) const
+{
+    if (root == nullptr)
+        return nullptr;
+
+    if (key == root->key())
+        return root;
+
+    if (key < root->key())
+        return nlrSearch(root->left(), key);
+    else
+        return nlrSearch(root->right(), key);
+
+}
+
+SearchTree::Node* SearchTree::findParent(Node* root) const
+{
+    //std::cout << "child id: " << root << '\n';
+    if (root == nullptr || m_root == root)
+        return nullptr;
+
+    std::vector<Node*> currLevel;
+    currLevel.push_back(m_root);
+
+    while (currLevel.size())
+    {
+
+        std::vector<Node*> nextLevel;
+        nextLevel.reserve(currLevel.size() * 2);
+
+        for (Node* node : currLevel)
+        {
+            if (node->left())
+            {
+                //std::cout << "left(): " << node->left()->key() << " id: " << node->left() << " root id: " << root << '\n';
+                if (node->left() == root)
+                {
+                    //std::cout << "findParent: " << node << '\n';
+                    return node;
+                }
+                nextLevel.push_back(node->left());
+
+            }
+
+            if (node->right())
+            {
+                //std::cout << "rigth: " << node->right()->key() <<  " id: " << node->right() << " root id: " << root <<  '\n';
+
+                if (node->right() == root)
+                {
+                    //std::cout << "findParent: " << node << '\n';
+                    return node;
+                }
+
+                nextLevel.push_back(node->right());
+
+            }
+        }
+        currLevel.swap(nextLevel);
+    }
+    return nullptr;
+}
+
+bool SearchTree::deleteNodeByKey(const int key)
+{
+    return deleteNodeByKey(m_root, key);
+}
+
+bool SearchTree::deleteNode(Node* root)
+{
+    deleteNodeByKey(root, root->key());
+}
+
+bool SearchTree::deleteNodeByKey(Node* root, const int key)
+{
+    Node* toDelete = nlrSearch(root, key);
+    if (root == nullptr || toDelete == nullptr)
+        return false;
+
+
+    Node* parent = findParent(toDelete);
+
+    if (toDelete->left() == nullptr && toDelete->right() == nullptr)
+    {
+        if (parent)
+            if (parent->left() == toDelete)
+                parent->left() = nullptr;
+            else
+                parent->right() = nullptr;
+        else
+            m_root = nullptr;
+
+        delete toDelete;
+
+        return true;
+    }
+
+    if (toDelete->left() != nullptr && toDelete->right() == nullptr)
+    {
+        if (parent)
+            if (parent->left() == toDelete)
+                parent->left() = toDelete->left();
+            else
+                parent->right() = toDelete->left();
+        else
+            m_root = m_root->left();
+
+        delete toDelete;
+
+        return true;
+    }
+
+    if (toDelete->left() == nullptr && toDelete->right() != nullptr)
+    {
+        if (parent)
+            if (parent->left() == toDelete)
+                parent->left() = toDelete->right();
+            else
+                parent->right() = toDelete->right();
+        else
+            m_root = m_root->right();
+
+        delete toDelete;
+
+        return true;
+    }
+
+    if (toDelete->left() != nullptr && toDelete->right() != nullptr)
+    {
+        Node* replacingNode = getMax(toDelete->left());
+        Node* replacingNodeParent = findParent(replacingNode);
+        if (parent)
+            if (parent->left() == toDelete)
+                parent->left() = replacingNode;
+            else
+                parent->right() = replacingNode;
+        else
+            m_root = replacingNode;
+
+        if (replacingNode == toDelete->left())
+            replacingNode->right() = toDelete->right();
+        else
+        {
+            replacingNodeParent->right() = replacingNode->left();
+            replacingNode->right() = toDelete->right();
+            replacingNode->left() = toDelete->left();
+        }
+        delete toDelete;
+
+        return true;
+    }
+}
+
